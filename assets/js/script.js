@@ -543,8 +543,10 @@ function openAddProductDrawer() {
   dom.productForm.reset();
   setFormImagePreview('');
   dom.formProductId.value = '';
+  dom.formProductQty.value = '0';
+  dom.formProductPrice.value = '0.00';
   dom.drawerTitle.textContent = 'Add Product';
-  dom.drawerSubtitle.textContent = 'Enter product information to record inventory.';
+  dom.drawerSubtitle.textContent = 'Enter product details to record inventory';
 
   dom.productDrawerBackdrop.classList.remove('hidden');
   dom.productDrawerPanel.classList.remove('translate-x-full');
@@ -607,7 +609,7 @@ function validateProductForm() {
     err.classList.remove('hidden');
     isValid = false;
   } else {
-    const isDuplicate = products.some(p => p.sku.toLowerCase() === sku.toLowerCase() && p.id !== editingId);
+    const isDuplicate = products.some(p => p.sku && p.sku.toLowerCase() === sku.toLowerCase() && p.id !== editingId);
     if (isDuplicate) {
       dom.formProductSku.classList.add('border-coral', 'bg-coral-light/30');
       const err = document.getElementById('errorSku');
@@ -641,6 +643,16 @@ function validateProductForm() {
     dom.formProductSupplier.classList.add('border-coral', 'bg-coral-light/30');
     document.getElementById('errorSupplier').classList.remove('hidden');
     isValid = false;
+  }
+
+  if (!isValid) {
+    showToast('Required Fields', 'Please complete all highlighted fields marked with *', 'danger');
+    const firstInvalid = dom.productForm.querySelector('.border-coral');
+    if (firstInvalid) {
+      firstInvalid.focus();
+      firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return false;
   }
 
   return isValid;
@@ -678,6 +690,14 @@ function handleSaveProduct() {
     };
     products.unshift(newProduct);
     saveCatalog();
+    activeFilters.search = '';
+    activeFilters.category = 'all';
+    activeFilters.status = 'all';
+    currentPage = 1;
+    dom.tableSearchInput.value = '';
+    dom.categoryFilterSelect.value = 'all';
+    dom.statusFilterSelect.value = 'all';
+    updateFilterTabClasses();
     renderDashboardSummary();
     renderTable();
     closeProductDrawer();
@@ -874,6 +894,10 @@ function setupEventListeners() {
   dom.cancelDrawerBtn.addEventListener('click', closeProductDrawer);
   dom.productDrawerBackdrop.addEventListener('click', closeProductDrawer);
   dom.saveProductBtn.addEventListener('click', handleSaveProduct);
+  dom.productForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    handleSaveProduct();
+  });
 
   dom.imagePreviewContainer.addEventListener('click', () => {
     dom.formProductImageFile.click();
